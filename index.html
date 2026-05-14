@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Maze Lab</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface2: #1a1a28;
+            --border: #2a2a40;
+            --accent: #00f5a0;
+            --accent2: #7c3aed;
+            --accent3: #f59e0b;
+            --text: #e8e8f0;
+            --text-dim: #6b6b88;
+            --ow-color: #00f5a0;
+            --tr-color: #f59e0b;
+            --wall: #2a2a40;
+            --path: #1a1a28;
+            --player: #00f5a0;
+            --visited: rgba(0, 245, 160, 0.12);
+            --exit: #f59e0b;
+            --cell-open: #1e1e2e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            font-size: 1.4rem;
+        }
+
+        nav {
+            display: flex;
+            gap: 4px;
+        }
+
+        .nav-btn {
+            padding: 8px 18px;
+            border-radius: 6px;
+            border: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--text-dim);
+            letter-spacing: 0.06em;
+        }
+
+        .nav-btn:hover {
+            color: var(--text);
+            background: var(--surface2);
+        }
+
+        .nav-btn.active {
+            background: var(--accent);
+            color: #000;
+            font-weight: 700;
+        }
+
+        /* ===== PAGES ===== */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* ===== PLAY PAGE ===== */
+        .play-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 0;
+            height: calc(100vh - 57px);
+        }
+
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 24px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.65rem;
+            letter-spacing: 0.12em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .algo-pick {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .algo-btn {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-dim);
+            font-family: 'Syne', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .algo-btn .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .algo-btn.ow-active {
+            border-color: var(--ow-color);
+            background: rgba(0, 245, 160, 0.08);
+            color: var(--ow-color);
+        }
+
+        .algo-btn.tr-active {
+            border-color: var(--tr-color);
+            background: rgba(245, 158, 11, 0.08);
+            color: var(--tr-color);
+        }
+
+        .algo-btn:hover {
+            border-color: var(--border);
+            color: var(--text);
+            background: var(--surface2);
+        }
+
+        label.ctrl-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .val-display {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+            text-align: right;
+            margin-top: 2px;
+        }
+
+        .ctrl-btn {
+            width: 100%;
+            padding: 11px;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s;
+            letter-spacing: 0.04em;
+        }
+
+        .ctrl-btn.primary {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .ctrl-btn.primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .ctrl-btn.secondary {
+            background: var(--surface2);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .ctrl-btn.secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .ctrl-btn.danger {
+            background: transparent;
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-card {
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .sv {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-card .sk {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .maze-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        canvas#mazeCanvas {
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: default;
+            image-rendering: pixelated;
+        }
+
+        .maze-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .win-banner {
+            display: none;
+            background: rgba(0, 245, 160, 0.15);
+            border: 1px solid var(--accent);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 28px 40px;
+            text-align: center;
+            pointer-events: all;
+        }
+
+        .win-banner h2 {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .win-banner p {
+            color: var(--text-dim);
+            margin-bottom: 16px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .keys-hint {
+            position: absolute;
+            bottom: 16px;
+            right: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .key-badge {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            padding: 3px 7px;
+            border-radius: 4px;
+            color: var(--text);
+        }
+
+        /* ===== COMPARE PAGE ===== */
+        .compare-layout {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            height: calc(100vh - 57px);
+        }
+
+        .compare-controls {
+            padding: 16px 32px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .compare-controls label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .compare-controls input[type=range] {
+            width: 140px;
+        }
+
+        .compare-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+        }
+
+        .compare-pane {
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .compare-pane:last-child {
+            border-right: none;
+        }
+
+        .pane-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pane-title {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pane-badge {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .ow-badge {
+            background: rgba(0, 245, 160, 0.15);
+            color: var(--ow-color);
+        }
+
+        .tr-badge {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--tr-color);
+        }
+
+        .pane-stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 0 0 0 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .pane-stat span {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .pane-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        /* ===== CHARTS PAGE ===== */
+        .charts-page {
+            padding: 32px;
+            overflow-y: auto;
+            height: calc(100vh - 57px);
+        }
+
+        .charts-page h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .charts-page p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-bottom: 32px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+            gap: 24px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .chart-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .chart-card p {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        canvas.chart-canvas {
+            width: 100% !important;
+        }
+
+        .legend {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .metrics-table-wrap {
+            overflow-x: auto;
+        }
+
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.72rem;
+        }
+
+        .metrics-table th {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dim);
+            font-weight: 400;
+            letter-spacing: 0.06em;
+        }
+
+        .metrics-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(42, 42, 64, 0.5);
+        }
+
+        .metrics-table tr:hover td {
+            background: var(--surface2);
+        }
+
+        .ow-val {
+            color: var(--ow-color);
+            font-weight: 700;
+        }
+
+        .tr-val {
+            color: var(--tr-color);
+            font-weight: 700;
+        }
+
+        /* ===== ABOUT PAGE ===== */
+        .about-page {
+            padding: 40px;
+            max-width: 820px;
+            margin: 0 auto;
+            overflow-y: auto;
+            height: calc(100vh - 57px);
+        }
+
+        .about-page h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .about-page .sub {
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            margin-bottom: 40px;
+        }
+
+        .algo-card {
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .algo-card h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .algo-card p {
+            font-size: 0.88rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+            margin-bottom: 10px;
+        }
+
+        .algo-card .props {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .prop-item {
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .prop-item .pk {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .prop-item .pv {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-top: 4px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* Misc */
+        .tag {
+            display: inline-block;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .running-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.3
+            }
+        }
+
+        .speed-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toggle {
+            position: relative;
+            width: 36px;
+            height: 20px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--surface2);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: 0.2s;
+        }
+
+        .toggle-slider:before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            left: 2px;
+            top: 2px;
+            background: var(--text-dim);
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+
+        .toggle input:checked+.toggle-slider {
+            background: rgba(0, 245, 160, 0.2);
+            border-color: var(--accent);
+        }
+
+        .toggle input:checked+.toggle-slider:before {
+            transform: translateX(16px);
+            background: var(--accent);
+        }
+
+        select {
+            background: var(--surface2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 7px 12px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .info-box {
+            background: rgba(0, 245, 160, 0.06);
+            border: 1px solid rgba(0, 245, 160, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: var(--accent);
+        }
+
+        .step-counter {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .step-counter span {
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">
+            <span class="logo-icon">⬡</span>
+            DYNAMIC MAZE LAB
+        </div>
+        <nav>
+            <button class="nav-btn active" onclick="showPage('play')">▶ PLAY</button>
+            <button class="nav-btn" onclick="showPage('compare')">⇌ COMPARE</button>
+            <button class="nav-btn" onclick="showPage('charts')">◈ METRICS</button>
+            <button class="nav-btn" onclick="showPage('about')">? ABOUT</button>
+        </nav>
+    </header>
+
+    <!-- ===== PLAY PAGE ===== -->
+    <div class="page active" id="page-play">
+        <div class="play-layout">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Algorithm</h3>
+                    <div class="algo-pick">
+                        <button class="algo-btn ow-active" id="btn-ow" onclick="selectAlgo('ow')">
+                            <span class="dot" style="background:var(--ow-color)"></span>
+                            Origin Walk
+                        </button>
+                        <button class="algo-btn" id="btn-tr" onclick="selectAlgo('tr')">
+                            <span class="dot" style="background:var(--tr-color)"></span>
+                            Toggle & Repair
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Maze Size</h3>
+                    <label class="ctrl-label">Grid Dimension</label>
+                    <input type="range" id="sizeRange" min="5" max="31" step="2" value="15" oninput="updateSizeLabel()">
+                    <div class="val-display" id="sizeVal">15 × 15</div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Evolution Speed</h3>
+                    <label class="ctrl-label">Updates per frame</label>
+                    <input type="range" id="speedRange" min="1" max="30" value="5" oninput="updateSpeedLabel()">
+                    <div class="val-display" id="speedVal">5</div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Display</h3>
+                    <div class="toggle-row" style="margin-bottom:10px">
+                        <span class="ctrl-label" style="margin:0">Show solution path</span>
+                        <label class="toggle"><input type="checkbox" id="showSolution" onchange="redraw()"><span
+                                class="toggle-slider"></span></label>
+                    </div>
+                    <div class="toggle-row">
+                        <span class="ctrl-label" style="margin:0">Show visited cells</span>
+                        <label class="toggle"><input type="checkbox" id="showVisited" checked onchange="redraw()"><span
+                                class="toggle-slider"></span></label>
+                    </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:8px">
+                    <button class="ctrl-btn primary" id="startBtn" onclick="startPlay()">▶ START GAME</button>
+                    <button class="ctrl-btn secondary" onclick="resetPlay()">↺ RESET MAZE</button>
+                    <button class="ctrl-btn danger" onclick="stopPlay()">■ STOP</button>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Stats</h3>
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="sv" id="statSteps">0</div>
+                            <div class="sk">STEPS</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="sv" id="statMoves">0</div>
+                            <div class="sk">MOVES</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="sv" id="statEdges">0%</div>
+                            <div class="sk">CHANGED</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="sv" id="statDeadEnds">0%</div>
+                            <div class="sk">DEAD ENDS</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box" id="algoInfo">
+                    <strong>Origin Walk</strong>: O(1) per step. Migrates a root node across the tree. Smooth, local
+                    evolution.
+                </div>
+            </div>
+
+            <div class="maze-area">
+                <canvas id="mazeCanvas"></canvas>
+                <div class="maze-overlay">
+                    <div class="win-banner" id="winBanner">
+                        <h2>🏆 Solved!</h2>
+                        <p id="winStats">Completed in 0 moves</p>
+                        <button class="ctrl-btn primary" onclick="resetPlay()" style="width:auto;padding:10px 28px">Play
+                            Again</button>
+                    </div>
+                </div>
+                <div class="keys-hint">
+                    <span>Move:</span>
+                    <span class="key-badge">↑</span>
+                    <span class="key-badge">↓</span>
+                    <span class="key-badge">←</span>
+                    <span class="key-badge">→</span>
+                    <span style="margin-left:8px">or</span>
+                    <span class="key-badge">W</span>
+                    <span class="key-badge">A</span>
+                    <span class="key-badge">S</span>
+                    <span class="key-badge">D</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== COMPARE PAGE ===== -->
+    <div class="page" id="page-compare">
+        <div class="compare-layout">
+            <div class="compare-controls">
+                <div>
+                    <label>Grid size&nbsp;</label>
+                    <input type="range" id="cmpSize" min="5" max="25" step="2" value="11"
+                        oninput="updateCmpSizeLabel()">
+                    <span id="cmpSizeVal"
+                        style="font-family:monospace;font-size:0.8rem;color:var(--accent)">11×11</span>
+                </div>
+                <div>
+                    <label>Speed&nbsp;</label>
+                    <input type="range" id="cmpSpeed" min="1" max="20" value="5">
+                </div>
+                <button class="ctrl-btn primary" onclick="startCompare()" style="width:auto;padding:9px 20px">▶ Run
+                    Both</button>
+                <button class="ctrl-btn secondary" onclick="stopCompare()" style="width:auto;padding:9px 20px">■
+                    Stop</button>
+                <div class="running-indicator" id="cmpRunning" style="display:none">
+                    <div class="pulse"></div> RUNNING
+                </div>
+                <div class="step-counter" id="cmpStepCount" style="margin-left:auto">Steps: <span>0</span></div>
+            </div>
+            <div class="compare-main">
+                <div class="compare-pane">
+                    <div class="pane-header">
+                        <div class="pane-title">
+                            <span class="pane-badge ow-badge">ALG 1</span>
+                            Origin Walk
+                        </div>
+                        <div class="pane-stats" id="owPaneStats">
+                            <span>DE: <span id="owDE">–</span></span>
+                            <span>Step time: <span id="owTime">–</span></span>
+                            <span>Changed: <span id="owChg">–</span></span>
+                        </div>
+                    </div>
+                    <div class="pane-body">
+                        <canvas id="cmpCanvasOW"></canvas>
+                    </div>
+                </div>
+                <div class="compare-pane">
+                    <div class="pane-header">
+                        <div class="pane-title">
+                            <span class="pane-badge tr-badge">ALG 2</span>
+                            Toggle & Repair
+                        </div>
+                        <div class="pane-stats">
+                            <span>DE: <span id="trDE">–</span></span>
+                            <span>Step time: <span id="trTime">–</span></span>
+                            <span>Changed: <span id="trChg">–</span></span>
+                        </div>
+                    </div>
+                    <div class="pane-body">
+                        <canvas id="cmpCanvasTR"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CHARTS PAGE ===== -->
+    <div class="page" id="page-charts">
+        <div class="charts-page">
+            <h2>Metrics & Analysis</h2>
+            <p>Run both algorithms and observe live metrics. Start the comparison first to populate charts.</p>
+            <div style="margin-bottom:20px;display:flex;gap:10px;align-items:center">
+                <button class="ctrl-btn primary" onclick="showPage('compare');startCompare()"
+                    style="width:auto;padding:9px 20px">▶ Start Comparison</button>
+                <button class="ctrl-btn secondary" onclick="clearChartData()" style="width:auto;padding:9px 20px">↺
+                    Clear Data</button>
+                <span class="step-counter">Data points: <span id="chartDataPts">0</span></span>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Dead-End Ratio Over Time</h3>
+                    <p>% nodes with degree 1 — proxy for maze branching complexity</p>
+                    <canvas id="chartDE" height="200" class="chart-canvas"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:var(--ow-color)"></div>Origin Walk
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:var(--tr-color)"></div>Toggle-Repair
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Per-Step Time (ms)</h3>
+                    <p>Wall-clock time per update step — efficiency benchmark</p>
+                    <canvas id="chartTime" height="200" class="chart-canvas"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:var(--ow-color)"></div>Origin Walk
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:var(--tr-color)"></div>Toggle-Repair
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Cumulative Edge Turnover</h3>
+                    <p>% of initial edges replaced at least once — structural mixing rate</p>
+                    <canvas id="chartEdge" height="200" class="chart-canvas"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:var(--ow-color)"></div>Origin Walk
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:var(--tr-color)"></div>Toggle-Repair
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Junction Ratio Over Time</h3>
+                    <p>% nodes with degree ≥ 3 — measures branching topology</p>
+                    <canvas id="chartJunc" height="200" class="chart-canvas"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:var(--ow-color)"></div>Origin Walk
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:var(--tr-color)"></div>Toggle-Repair
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-card" style="margin-top:24px">
+                <h3>Live Snapshot Data</h3>
+                <p>Recorded every 50 steps</p>
+                <div class="metrics-table-wrap">
+                    <table class="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Step</th>
+                                <th>OW Dead-End%</th>
+                                <th>TR Dead-End%</th>
+                                <th>OW Junction%</th>
+                                <th>TR Junction%</th>
+                                <th>OW Time (ms)</th>
+                                <th>TR Time (ms)</th>
+                                <th>OW Changed%</th>
+                                <th>TR Changed%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metricsTableBody">
+                            <tr>
+                                <td colspan="9" style="color:var(--text-dim);text-align:center;padding:20px">Run
+                                    comparison to see data</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ABOUT PAGE ===== -->
+    <div class="page" id="page-about">
+        <div class="about-page">
+            <h2>Algorithm Reference</h2>
+            <p class="sub">Based on: "Dynamic Perfect Maze Generation via Real-Time Spanning Tree Transformations"</p>
+
+            <div class="algo-card">
+                <h3><span style="color:var(--ow-color)">●</span> Algorithm 1 — Origin Walk</h3>
+                <p>Encodes the spanning tree as a directed pointer array rooted at a distinguished <em>origin</em> node.
+                    Each cell stores one outgoing pointer to a neighbor; the origin has no pointer. The maze evolves by
+                    migrating this origin to an adjacent cell — swapping exactly one edge in and one edge out per step.
+                </p>
+                <p>The update is inherently local: only the immediate neighborhood of the origin changes. The origin
+                    performs a simple random walk on the grid, which is ergodic — every node is visited infinitely
+                    often.</p>
+                <div class="props">
+                    <div class="prop-item">
+                        <div class="pk">Per-step complexity</div>
+                        <div class="pv" style="color:var(--ow-color)">O(1)</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Locality</div>
+                        <div class="pv" style="color:var(--ow-color)">Local</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Convergence</div>
+                        <div class="pv" style="color:var(--ow-color)">~1000 steps</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Boundary bias</div>
+                        <div class="pv">Compounding</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Implementation</div>
+                        <div class="pv" style="color:var(--ow-color)">Simple</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Turn count</div>
+                        <div class="pv" style="color:var(--ow-color)">Higher (~28)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="algo-card">
+                <h3><span style="color:var(--tr-color)">●</span> Algorithm 2 — Toggle & Repair</h3>
+                <p>Selects arbitrary edges from the grid and toggles their presence. <strong>Edge insertion</strong>:
+                    adds an edge (creating a cycle), then removes a random edge along the resulting cycle. <strong>Edge
+                        deletion</strong>: removes an edge (splitting the graph), then reconnects via a random cut edge
+                    between the two components.</p>
+                <p>Both operations are non-local — the repair edge can come from anywhere on the grid, enabling rapid
+                    global restructuring at the cost of O(N) traversal per step.</p>
+                <div class="props">
+                    <div class="prop-item">
+                        <div class="pk">Per-step complexity</div>
+                        <div class="pv" style="color:var(--tr-color)">O(N)</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Locality</div>
+                        <div class="pv" style="color:var(--tr-color)">Global</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Convergence</div>
+                        <div class="pv" style="color:var(--tr-color)">~500 steps</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Boundary bias</div>
+                        <div class="pv">Mild</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Implementation</div>
+                        <div class="pv">Moderate</div>
+                    </div>
+                    <div class="prop-item">
+                        <div class="pk">Dead-end ratio</div>
+                        <div class="pv" style="color:var(--tr-color)">~30.7%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="algo-card" style="border-color:var(--border)">
+                <h3>Key Invariant</h3>
+                <p>Both algorithms guarantee the <strong>perfect maze property</strong> at every step: the maze graph G
+                    = (V, E) is always a spanning tree — connected and acyclic. There always exists exactly one simple
+                    path between any two cells.</p>
+                <p>This means the maze can never have loops or disconnected regions, no matter how many updates are
+                    applied.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ======================================================
+        // MAZE ENGINE
+        // ======================================================
+
+        const DIR = { UP: 0, DOWN: 1, LEFT: 2, RIGHT: 3 };
+        const DROW = [-1, 1, 0, 0];
+        const DCOL = [0, 0, -1, 1];
+        const OPP = [1, 0, 3, 2];
+
+        function idx(r, c, cols) { return r * cols + c; }
+        function validCell(r, c, rows, cols) { return r >= 0 && r < rows && c >= 0 && c < cols; }
+
+        // Shared: generate random spanning tree via RDFS
+        function generateRDFS(rows, cols) {
+            const n = rows * cols;
+            const adj = Array.from({ length: n }, () => new Set());
+            const visited = new Uint8Array(n);
+            const stack = [0];
+            visited[0] = 1;
+            while (stack.length) {
+                const cur = stack[stack.length - 1];
+                const cr = Math.floor(cur / cols), cc = cur % cols;
+                const dirs = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+                let pushed = false;
+                for (const d of dirs) {
+                    const nr = cr + DROW[d], nc = cc + DCOL[d];
+                    if (validCell(nr, nc, rows, cols)) {
+                        const nIdx = idx(nr, nc, cols);
+                        if (!visited[nIdx]) {
+                            visited[nIdx] = 1;
+                            adj[cur].add(nIdx);
+                            adj[nIdx].add(cur);
+                            stack.push(nIdx);
+                            pushed = true;
+                            break;
+                        }
+                    }
+                }
+                if (!pushed) stack.pop();
+            }
+            return adj;
+        }
+
+        // ======================================================
+        // ALGORITHM 1: ORIGIN WALK
+        // ======================================================
+        class OriginWalk {
+            constructor(rows, cols) {
+                this.rows = rows; this.cols = cols;
+                this.n = rows * cols;
+                // pointer: -1 = origin, else direction index
+                this.ptr = new Int8Array(this.n).fill(-1);
+                // adjacency set (the actual maze edges)
+                this.adj = Array.from({ length: this.n }, () => new Set());
+                this.origin = 0;
+                this.initialEdges = new Set();
+                this.changedEdges = new Set();
+                this.steps = 0;
+                this._init();
+            }
+            _init() {
+                const { rows, cols, n } = this;
+                // Build from RDFS adjacency, assign pointers toward origin (0)
+                const rdfsAdj = generateRDFS(rows, cols);
+                // BFS from node 0 to assign parent pointers
+                const parent = new Int32Array(n).fill(-1);
+                const queue = [0]; const vis = new Uint8Array(n); vis[0] = 1;
+                while (queue.length) {
+                    const cur = queue.shift();
+                    for (const nb of rdfsAdj[cur]) {
+                        if (!vis[nb]) { vis[nb] = 1; parent[nb] = cur; queue.push(nb); }
+                    }
+                }
+                // ptr[v] = direction from v toward its parent (toward root=0)
+                for (let v = 1; v < n; v++) {
+                    const vr = Math.floor(v / cols), vc = v % cols;
+                    const pr = Math.floor(parent[v] / cols), pc = parent[v] % cols;
+                    for (let d = 0; d < 4; d++) {
+                        if (vr + DROW[d] === pr && vc + DCOL[d] === pc) { this.ptr[v] = d; break; }
+                    }
+                }
+                this.ptr[0] = -1; this.origin = 0;
+                // Build adj from ptr
+                for (let v = 1; v < n; v++) {
+                    const d = this.ptr[v];
+                    const vr = Math.floor(v / cols), vc = v % cols;
+                    const nr = vr + DROW[d], nc = vc + DCOL[d];
+                    const nb = idx(nr, nc, cols);
+                    this.adj[v].add(nb); this.adj[nb].add(v);
+                }
+                // Record initial edges
+                for (let v = 0; v < n; v++) for (const nb of this.adj[v]) if (nb > v) this.initialEdges.add(v * n + nb);
+            }
+            step() {
+                const { rows, cols, n } = this;
+                const or = Math.floor(this.origin / cols), oc = this.origin % cols;
+                let d, nr, nc;
+                do {
+                    d = Math.floor(Math.random() * 4);
+                    nr = or + DROW[d]; nc = oc + DCOL[d];
+                } while (!validCell(nr, nc, rows, cols));
+                const u = this.origin;
+                const v = idx(nr, nc, cols);
+                const dOld = this.ptr[v];
+                // Set u's pointer to d, open wall u-v
+                this.ptr[u] = d;
+                this.adj[u].add(v); this.adj[v].add(u);
+                // Track edge change
+                const eNew = Math.min(u, v) * n + Math.max(u, v);
+                if (!this.initialEdges.has(eNew)) this.changedEdges.add(eNew);
+                // Restore old wall unless it loops back
+                if (dOld !== -1 && dOld !== OPP[d]) {
+                    const vr = Math.floor(v / cols), vc = v % cols;
+                    const or2 = vr + DROW[dOld], oc2 = vc + DCOL[dOld];
+                    if (validCell(or2, oc2, rows, cols)) {
+                        const old_nb = idx(or2, oc2, cols);
+                        this.adj[v].delete(old_nb); this.adj[old_nb].delete(v);
+                        const eOld = Math.min(v, old_nb) * n + Math.max(v, old_nb);
+                        if (this.initialEdges.has(eOld)) this.changedEdges.add(eOld);
+                    }
+                }
+                this.ptr[v] = -1;
+                this.origin = v;
+                this.steps++;
+            }
+            deadEndRatio() {
+                let cnt = 0; for (let v = 0; v < this.n; v++) if (this.adj[v].size === 1) cnt++;
+                return cnt / this.n;
+            }
+            junctionRatio() {
+                let cnt = 0; for (let v = 0; v < this.n; v++) if (this.adj[v].size >= 3) cnt++;
+                return cnt / this.n;
+            }
+            changedPct() {
+                return (this.changedEdges.size / this.initialEdges.size) * 100;
+            }
+            solvePath(startV, endV) {
+                // BFS
+                const { n } = this;
+                const parent = new Int32Array(n).fill(-1);
+                const vis = new Uint8Array(n); vis[startV] = 1;
+                const queue = [startV];
+                while (queue.length) {
+                    const cur = queue.shift();
+                    if (cur === endV) break;
+                    for (const nb of this.adj[cur]) { if (!vis[nb]) { vis[nb] = 1; parent[nb] = cur; queue.push(nb); } }
+                }
+                const path = []; let cur = endV;
+                while (cur !== -1) { path.push(cur); cur = parent[cur]; }
+                return path.reverse();
+            }
+        }
+
+        // ======================================================
+        // ALGORITHM 2: TOGGLE & REPAIR
+        // ======================================================
+        class ToggleRepair {
+            constructor(rows, cols) {
+                this.rows = rows; this.cols = cols;
+                this.n = rows * cols;
+                this.adj = Array.from({ length: this.n }, () => new Set());
+                this.initialEdges = new Set();
+                this.changedEdges = new Set();
+                this.steps = 0;
+                this._init();
+            }
+            _init() {
+                const { rows, cols, n } = this;
+                const rdfsAdj = generateRDFS(rows, cols);
+                for (let v = 0; v < n; v++) for (const nb of rdfsAdj[v]) { this.adj[v].add(nb); }
+                for (let v = 0; v < n; v++) for (const nb of this.adj[v]) if (nb > v) this.initialEdges.add(v * n + nb);
+            }
+            _bfsPath(u, v) {
+                const { n } = this;
+                const parent = new Int32Array(n).fill(-1); parent[u] = -2;
+                const queue = [u];
+                while (queue.length) {
+                    const cur = queue.shift();
+                    if (cur === v) break;
+                    for (const nb of this.adj[cur]) if (parent[nb] === -1) { parent[nb] = cur; queue.push(nb); }
+                }
+                const path = []; let cur = v;
+                while (parent[cur] !== -2) { path.push([parent[cur], cur]); cur = parent[cur]; }
+                return path;
+            }
+            _dfsComponent(start, skipU, skipV) {
+                const comp = new Set();
+                const stack = [start]; comp.add(start);
+                while (stack.length) {
+                    const cur = stack.pop();
+                    for (const nb of this.adj[cur]) {
+                        if (!comp.has(nb)) {
+                            if ((cur === skipU && nb === skipV) || (cur === skipV && nb === skipU)) continue;
+                            comp.add(nb); stack.push(nb);
+                        }
+                    }
+                }
+                return comp;
+            }
+            _trackEdge(a, b) {
+                const { n } = this;
+                const k = Math.min(a, b) * n + Math.max(a, b);
+                if (!this.initialEdges.has(k)) this.changedEdges.add(k);
+                else this.changedEdges.add(k);
+            }
+            step() {
+                const { rows, cols, n } = this;
+                const u = Math.floor(Math.random() * n);
+                const ur = Math.floor(u / cols), uc = u % cols;
+                const dirs = []; for (let d = 0; d < 4; d++) { const nr = ur + DROW[d], nc = uc + DCOL[d]; if (validCell(nr, nc, rows, cols)) dirs.push(d); }
+                const d = dirs[Math.floor(Math.random() * dirs.length)];
+                const v = idx(ur + DROW[d], uc + DCOL[d], cols);
+                if (Math.random() < 0.5) {
+                    // Case 1: Edge Insertion
+                    if (!this.adj[u].has(v)) {
+                        const path = this._bfsPath(u, v);
+                        if (path.length === 0) { this.steps++; return; }
+                        const [a, b] = path[Math.floor(Math.random() * path.length)];
+                        this.adj[a].delete(b); this.adj[b].delete(a); this._trackEdge(a, b);
+                        this.adj[u].add(v); this.adj[v].add(u); this._trackEdge(u, v);
+                    }
+                } else {
+                    // Case 2: Edge Deletion
+                    if (this.adj[u].has(v)) {
+                        this.adj[u].delete(v); this.adj[v].delete(u);
+                        const cu = this._dfsComponent(u, u, v);
+                        const candidates = [];
+                        for (const ci of cu) { const cr = Math.floor(ci / cols), cc = ci % cols; for (let dd = 0; dd < 4; dd++) { const nr = cr + DROW[dd], nc = cc + DCOL[dd]; if (validCell(nr, nc, rows, cols)) { const nb = idx(nr, nc, cols); if (!cu.has(nb)) candidates.push([ci, nb]); } } }
+                        if (candidates.length === 0) { this.adj[u].add(v); this.adj[v].add(u); this.steps++; return; }
+                        const [a, b] = candidates[Math.floor(Math.random() * candidates.length)];
+                        this.adj[a].add(b); this.adj[b].add(a); this._trackEdge(a, b); this._trackEdge(u, v);
+                    }
+                }
+                this.steps++;
+            }
+            deadEndRatio() { let cnt = 0; for (let v = 0; v < this.n; v++) if (this.adj[v].size === 1) cnt++; return cnt / this.n; }
+            junctionRatio() { let cnt = 0; for (let v = 0; v < this.n; v++) if (this.adj[v].size >= 3) cnt++; return cnt / this.n; }
+            changedPct() { return (this.changedEdges.size / this.initialEdges.size) * 100; }
+            solvePath(startV, endV) {
+                const { n } = this;
+                const parent = new Int32Array(n).fill(-1);
+                const vis = new Uint8Array(n); vis[startV] = 1;
+                const queue = [startV];
+                while (queue.length) { const cur = queue.shift(); if (cur === endV) break; for (const nb of this.adj[cur]) if (!vis[nb]) { vis[nb] = 1; parent[nb] = cur; queue.push(nb); } }
+                const path = []; let cur = endV; while (cur !== -1) { path.push(cur); cur = parent[cur]; } return path.reverse();
+            }
+        }
+
+        // ======================================================
+        // CANVAS RENDERER
+        // ======================================================
+        function renderMaze(canvas, maze, opts = {}) {
+            const { rows, cols } = maze;
+            const maxW = canvas.parentElement.clientWidth - 24;
+            const maxH = canvas.parentElement.clientHeight - 24;
+            const cs = Math.max(4, Math.min(Math.floor(maxW / cols), Math.floor(maxH / rows), 40));
+            const W = cs * cols, H = cs * rows;
+            if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+            const ctx = canvas.getContext('2d');
+            const wallColor = '#59597d';
+            const cellColor = '#0e0e18';
+            const openColor = '#1a1a2e';
+
+            ctx.fillStyle = wallColor;
+            ctx.fillRect(0, 0, W, H);
+
+            // Draw open cells and passages
+            for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                const v = idx(r, c, cols);
+                const x = c * cs, y = r * cs;
+                ctx.fillStyle = openColor;
+                ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2);
+                // Draw passages
+                for (const nb of maze.adj[v]) {
+                    const nr = Math.floor(nb / cols), nc = nb % cols;
+                    if (nr > r) { ctx.fillRect(x + 1, y + cs - 1, cs - 2, 3); }
+                    if (nc > c) { ctx.fillRect(x + cs - 1, y + 1, 3, cs - 2); }
+                }
+            }
+
+            // Solution path
+            if (opts.solutionPath && opts.solutionPath.length > 1) {
+                ctx.strokeStyle = 'rgba(124,58,237,0.6)'; ctx.lineWidth = Math.max(2, cs / 5);
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                ctx.beginPath();
+                const p = opts.solutionPath;
+                const sr = Math.floor(p[0] / cols), sc = p[0] % cols;
+                ctx.moveTo(sc * cs + cs / 2, sr * cs + cs / 2);
+                for (let i = 1; i < p.length; i++) { const pr = Math.floor(p[i] / cols), pc = p[i] % cols; ctx.lineTo(pc * cs + cs / 2, pr * cs + cs / 2); }
+                ctx.stroke();
+            }
+
+            // Visited
+            if (opts.visited) {
+                ctx.fillStyle = 'rgba(0,245,160,0.1)';
+                for (const v of opts.visited) { const r = Math.floor(v / cols), c = v % cols; ctx.fillRect(c * cs + 1, r * cs + 1, cs - 2, cs - 2); }
+            }
+
+            // Origin marker (OW)
+            if (maze.origin !== undefined) {
+                const or = Math.floor(maze.origin / cols), oc = maze.origin % cols;
+                ctx.fillStyle = 'rgba(0,245,160,0.3)';
+                ctx.beginPath(); ctx.arc(oc * cs + cs / 2, or * cs + cs / 2, cs / 3, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // Player
+            if (opts.player !== undefined) {
+                const pr = Math.floor(opts.player / cols), pc = opts.player % cols;
+                const px = pc * cs + cs / 2, py = pr * cs + cs / 2;
+                ctx.fillStyle = '#00f5a0';
+                ctx.beginPath(); ctx.arc(px, py, cs / 4.5, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = 'rgba(0,245,160,0.4)'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(px, py, cs / 3.5, 0, Math.PI * 2); ctx.stroke();
+            }
+
+            // Start / end markers
+            if (opts.start !== undefined) {
+                const sr = Math.floor(opts.start / cols), sc = opts.start % cols;
+                ctx.fillStyle = 'rgba(124,58,237,0.5)';
+                ctx.fillRect(sc * cs + 2, sr * cs + 2, cs - 4, cs - 4);
+            }
+            if (opts.end !== undefined) {
+                const er = Math.floor(opts.end / cols), ec = opts.end % cols;
+                ctx.fillStyle = 'rgba(245,158,11,0.6)';
+                ctx.fillRect(ec * cs + 2, er * cs + 2, cs - 4, cs - 4);
+                ctx.fillStyle = '#f59e0b'; ctx.font = `bold ${Math.max(8, cs / 2)}px monospace`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('★', ec * cs + cs / 2, er * cs + cs / 2);
+            }
+        }
+
+        // ======================================================
+        // PLAY PAGE STATE
+        // ======================================================
+        let playMaze = null, playAlgo = 'ow', playRunning = false, playRAF = null;
+        let playerPos = 0, playerVisited = new Set(), playerMoves = 0, gameStarted = false;
+        let playEnd = 0;
+
+        function selectAlgo(algo) {
+            playAlgo = algo;
+            document.getElementById('btn-ow').className = 'algo-btn' + (algo === 'ow' ? ' ow-active' : '');
+            document.getElementById('btn-tr').className = 'algo-btn' + (algo === 'tr' ? ' tr-active' : '');
+            document.getElementById('algoInfo').innerHTML = algo === 'ow'
+                ? '<strong>Origin Walk</strong>: O(1) per step. Migrates a root node across the tree. Smooth, local evolution.'
+                : '<strong>Toggle & Repair</strong>: O(N) per step. Non-local edge swaps for faster global restructuring.';
+        }
+
+        function updateSizeLabel() {
+            const v = document.getElementById('sizeRange').value;
+            document.getElementById('sizeVal').textContent = `${v} × ${v}`;
+        }
+        function updateSpeedLabel() {
+            const v = document.getElementById('speedRange').value;
+            document.getElementById('speedVal').textContent = v;
+        }
+
+        function startPlay() {
+            stopPlay();
+            const sz = parseInt(document.getElementById('sizeRange').value);
+            playMaze = playAlgo === 'ow' ? new OriginWalk(sz, sz) : new ToggleRepair(sz, sz);
+            playerPos = 0; playerVisited = new Set([0]); playerMoves = 0;
+            playEnd = sz * sz - 1;
+            gameStarted = true;
+            document.getElementById('winBanner').style.display = 'none';
+            playRunning = true;
+            playLoop();
+        }
+
+        function stopPlay() {
+            playRunning = false;
+            if (playRAF) cancelAnimationFrame(playRAF);
+        }
+
+        function resetPlay() {
+            stopPlay();
+            document.getElementById('winBanner').style.display = 'none';
+            startPlay();
+        }
+
+        function playLoop() {
+            if (!playRunning) return;
+            const spd = parseInt(document.getElementById('speedRange').value);
+            for (let i = 0; i < spd; i++) playMaze.step();
+            // Update stats
+            document.getElementById('statSteps').textContent = playMaze.steps;
+            document.getElementById('statMoves').textContent = playerMoves;
+            document.getElementById('statEdges').textContent = playMaze.changedPct().toFixed(1) + '%';
+            document.getElementById('statDeadEnds').textContent = (playMaze.deadEndRatio() * 100).toFixed(1) + '%';
+            // Draw
+            const canvas = document.getElementById('mazeCanvas');
+            const showSol = document.getElementById('showSolution').checked;
+            const showVis = document.getElementById('showVisited').checked;
+            renderMaze(canvas, playMaze, {
+                player: playerPos,
+                start: 0, end: playEnd,
+                solutionPath: showSol ? playMaze.solvePath(playerPos, playEnd) : null,
+                visited: showVis ? playerVisited : null
+            });
+            playRAF = requestAnimationFrame(playLoop);
+        }
+
+        function redraw() {
+            if (!playMaze) return;
+            const canvas = document.getElementById('mazeCanvas');
+            const showSol = document.getElementById('showSolution').checked;
+            const showVis = document.getElementById('showVisited').checked;
+            renderMaze(canvas, playMaze, {
+                player: playerPos, start: 0, end: playEnd,
+                solutionPath: showSol ? playMaze.solvePath(playerPos, playEnd) : null,
+                visited: showVis ? playerVisited : null
+            });
+        }
+
+        // Keyboard movement
+        document.addEventListener('keydown', e => {
+            if (!playMaze || !gameStarted || !playRunning) return;
+            const moves = { ArrowUp: 0, ArrowDown: 1, ArrowLeft: 2, ArrowRight: 3, w: 0, s: 1, a: 2, d: 3, W: 0, S: 1, A: 2, D: 3 };
+            const d = moves[e.key];
+            if (d === undefined) return;
+            e.preventDefault();
+            const { cols } = playMaze;
+            const r = Math.floor(playerPos / cols), c = playerPos % cols;
+            const nr = r + DROW[d], nc = c + DCOL[d];
+            if (!validCell(nr, nc, playMaze.rows, cols)) return;
+            const nb = idx(nr, nc, cols);
+            if (!playMaze.adj[playerPos].has(nb)) return;
+            playerPos = nb; playerVisited.add(nb); playerMoves++;
+            if (playerPos === playEnd) {
+                document.getElementById('winBanner').style.display = 'block';
+                document.getElementById('winStats').textContent = `Completed in ${playerMoves} moves · ${playMaze.steps} evolution steps`;
+            }
+        });
+
+        // ======================================================
+        // COMPARE PAGE
+        // ======================================================
+        let cmpOW = null, cmpTR = null, cmpRunning = false, cmpRAF = null;
+        let cmpStep = 0;
+        // For charts
+        let chartDataOW = { de: [], time: [], edge: [], junc: [] };
+        let chartDataTR = { de: [], time: [], edge: [], junc: [] };
+        let chartLabels = [];
+        let chartInited = false;
+        let chartObjs = {};
+
+        function updateCmpSizeLabel() {
+            const v = document.getElementById('cmpSize').value;
+            document.getElementById('cmpSizeVal').textContent = `${v}×${v}`;
+        }
+
+        function startCompare() {
+            stopCompare();
+            const sz = parseInt(document.getElementById('cmpSize').value);
+            cmpOW = new OriginWalk(sz, sz);
+            cmpTR = new ToggleRepair(sz, sz);
+            cmpStep = 0;
+            cmpRunning = true;
+            document.getElementById('cmpRunning').style.display = 'flex';
+            cmpLoop();
+        }
+
+        function stopCompare() {
+            cmpRunning = false;
+            if (cmpRAF) cancelAnimationFrame(cmpRAF);
+            document.getElementById('cmpRunning').style.display = 'none';
+        }
+
+        function cmpLoop() {
+            if (!cmpRunning) return;
+            const spd = parseInt(document.getElementById('cmpSpeed').value);
+            // Time OW
+            let t0 = performance.now();
+            for (let i = 0; i < spd; i++) cmpOW.step();
+            const owMs = (performance.now() - t0) / spd;
+            // Time TR
+            t0 = performance.now();
+            for (let i = 0; i < spd; i++) cmpTR.step();
+            const trMs = (performance.now() - t0) / spd;
+            cmpStep += spd;
+            // Update UI
+            document.getElementById('owDE').textContent = (cmpOW.deadEndRatio() * 100).toFixed(1) + '%';
+            document.getElementById('owTime').textContent = owMs.toFixed(3) + 'ms';
+            document.getElementById('owChg').textContent = cmpOW.changedPct().toFixed(1) + '%';
+            document.getElementById('trDE').textContent = (cmpTR.deadEndRatio() * 100).toFixed(1) + '%';
+            document.getElementById('trTime').textContent = trMs.toFixed(3) + 'ms';
+            document.getElementById('trChg').textContent = cmpTR.changedPct().toFixed(1) + '%';
+            document.getElementById('cmpStepCount').querySelector('span').textContent = cmpStep;
+            // Render
+            const c1 = document.getElementById('cmpCanvasOW'), c2 = document.getElementById('cmpCanvasTR');
+            renderMaze(c1, cmpOW, {});
+            renderMaze(c2, cmpTR, {});
+            // Record chart data every 50 steps
+            if (cmpStep % 50 === 0) {
+                chartLabels.push(cmpStep);
+                chartDataOW.de.push(+(cmpOW.deadEndRatio() * 100).toFixed(1));
+                chartDataOW.time.push(+owMs.toFixed(4));
+                chartDataOW.edge.push(+cmpOW.changedPct().toFixed(1));
+                chartDataOW.junc.push(+(cmpOW.junctionRatio() * 100).toFixed(1));
+                chartDataTR.de.push(+(cmpTR.deadEndRatio() * 100).toFixed(1));
+                chartDataTR.time.push(+trMs.toFixed(4));
+                chartDataTR.edge.push(+cmpTR.changedPct().toFixed(1));
+                chartDataTR.junc.push(+(cmpTR.junctionRatio() * 100).toFixed(1));
+                updateCharts();
+                updateMetricsTable();
+                document.getElementById('chartDataPts').textContent = chartLabels.length;
+            }
+            cmpRAF = requestAnimationFrame(cmpLoop);
+        }
+
+        // ======================================================
+        // CHARTS
+        // ======================================================
+        function drawChart(canvasId, label1, data1, color1, label2, data2, color2, labels) {
+            const canvas = document.getElementById(canvasId);
+            const dpr = window.devicePixelRatio || 1;
+            const W = canvas.parentElement.clientWidth - 40;
+            const H = 200;
+            canvas.width = W * dpr; canvas.height = H * dpr;
+            canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, W, H);
+            if (!labels || labels.length < 2) {
+                ctx.fillStyle = '#2a2a40'; ctx.fillRect(0, 0, W, H);
+                ctx.fillStyle = '#6b6b88'; ctx.font = '12px Space Mono,monospace';
+                ctx.textAlign = 'center'; ctx.fillText('Waiting for data...', W / 2, H / 2);
+                return;
+            }
+            const pad = { top: 16, right: 16, bottom: 28, left: 44 };
+            const cW = W - pad.left - pad.right, cH = H - pad.top - pad.bottom;
+            const allVals = [...data1, ...data2].filter(v => isFinite(v));
+            const minV = Math.min(...allVals), maxV = Math.max(...allVals);
+            const range = maxV - minV || 1;
+            const toX = (i) => pad.left + (i / (labels.length - 1)) * cW;
+            const toY = (v) => pad.top + (1 - (v - minV) / range) * cH;
+            // Background
+            ctx.fillStyle = '#0e0e18'; ctx.fillRect(0, 0, W, H);
+            // Grid
+            ctx.strokeStyle = '#1e1e30'; ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) { const y = pad.top + i * (cH / 4); ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke(); }
+            // Axis labels
+            ctx.fillStyle = '#6b6b88'; ctx.font = '9px Space Mono,monospace'; ctx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) { const v = minV + ((4 - i) / 4) * range; const y = pad.top + i * (cH / 4); ctx.fillText(v.toFixed(1), pad.left - 4, y + 3); }
+            // X labels
+            ctx.textAlign = 'center';
+            const step = Math.max(1, Math.floor(labels.length / 5));
+            for (let i = 0; i < labels.length; i += step) { ctx.fillText(labels[i], toX(i), H - 6); }
+            // Draw lines
+            const drawLine = (data, color) => {
+                if (data.length < 2) return;
+                ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(toX(0), toY(data[0]));
+                for (let i = 1; i < data.length; i++) ctx.lineTo(toX(i), toY(data[i]));
+                ctx.stroke();
+                // Fill
+                ctx.fillStyle = color.replace(')', ',0.08)').replace('rgb', 'rgba').replace('#', '').replace(/^(..)(..)(..)/, (_, r, g, b) => `rgba(${parseInt(r, 16)},${parseInt(g, 16)},${parseInt(b, 16)},0.08)`);
+                const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
+                grad.addColorStop(0, color + '33'); grad.addColorStop(1, color + '00');
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.moveTo(toX(0), toY(data[0]));
+                for (let i = 1; i < data.length; i++) ctx.lineTo(toX(i), toY(data[i]));
+                ctx.lineTo(toX(data.length - 1), pad.top + cH); ctx.lineTo(toX(0), pad.top + cH); ctx.closePath();
+                ctx.fill();
+            };
+            drawLine(data1, color1); drawLine(data2, color2);
+        }
+
+        function updateCharts() {
+            drawChart('chartDE', 'OW', chartDataOW.de, '#00f5a0', 'TR', chartDataTR.de, '#f59e0b', chartLabels);
+            drawChart('chartTime', 'OW', chartDataOW.time, '#00f5a0', 'TR', chartDataTR.time, '#f59e0b', chartLabels);
+            drawChart('chartEdge', 'OW', chartDataOW.edge, '#00f5a0', 'TR', chartDataTR.edge, '#f59e0b', chartLabels);
+            drawChart('chartJunc', 'OW', chartDataOW.junc, '#00f5a0', 'TR', chartDataTR.junc, '#f59e0b', chartLabels);
+        }
+
+        function updateMetricsTable() {
+            const tbody = document.getElementById('metricsTableBody');
+            if (!chartLabels.length) { tbody.innerHTML = '<tr><td colspan="9" style="color:var(--text-dim);text-align:center;padding:20px">Run comparison to see data</td></tr>'; return; }
+            // Show last 10 rows
+            const start = Math.max(0, chartLabels.length - 10);
+            let html = '';
+            for (let i = chartLabels.length - 1; i >= start; i--) {
+                html += `<tr>
+      <td style="color:var(--text-dim)">${chartLabels[i]}</td>
+      <td class="ow-val">${chartDataOW.de[i]}%</td>
+      <td class="tr-val">${chartDataTR.de[i]}%</td>
+      <td class="ow-val">${chartDataOW.junc[i]}%</td>
+      <td class="tr-val">${chartDataTR.junc[i]}%</td>
+      <td class="ow-val">${chartDataOW.time[i]}</td>
+      <td class="tr-val">${chartDataTR.time[i]}</td>
+      <td class="ow-val">${chartDataOW.edge[i]}%</td>
+      <td class="tr-val">${chartDataTR.edge[i]}%</td>
+    </tr>`;
+            }
+            tbody.innerHTML = html;
+        }
+
+        function clearChartData() {
+            chartLabels = []; chartDataOW = { de: [], time: [], edge: [], junc: [] }; chartDataTR = { de: [], time: [], edge: [], junc: [] };
+            document.getElementById('chartDataPts').textContent = '0';
+            updateCharts(); updateMetricsTable();
+        }
+
+        // ======================================================
+        // PAGE NAVIGATION
+        // ======================================================
+        function showPage(name) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('page-' + name).classList.add('active');
+            const btns = { play: '▶ PLAY', compare: '⇌ COMPARE', charts: '◈ METRICS', about: '? ABOUT' };
+            document.querySelectorAll('.nav-btn').forEach(b => { if (b.textContent.trim() === btns[name]) b.classList.add('active'); });
+            if (name === 'charts') { setTimeout(updateCharts, 50); }
+        }
+
+        // Init blank charts
+        setTimeout(() => { updateCharts(); }, 100);
+    </script>
+</body>
+
+</html>
