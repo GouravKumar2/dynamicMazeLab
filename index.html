@@ -1144,6 +1144,18 @@
         // MAZE ENGINE
         // ======================================================
 
+        let lastFrameTime = 0;
+const FRAME_DELAY_MS = 100; // Milliseconds between frames (adjust to your preference)
+
+function throttledFrame(callback) {
+    const now = performance.now();
+    const delay = Math.max(0, FRAME_DELAY_MS - (now - lastFrameTime));
+    setTimeout(() => {
+        lastFrameTime = performance.now();
+        callback();
+    }, delay);
+}
+
         const DIR = { UP: 0, DOWN: 1, LEFT: 2, RIGHT: 3 };
         const DROW = [-1, 1, 0, 0];
         const DCOL = [0, 0, -1, 1];
@@ -1538,7 +1550,7 @@
                 solutionPath: showSol ? playMaze.solvePath(playerPos, playEnd) : null,
                 visited: showVis ? playerVisited : null
             });
-            playRAF = requestAnimationFrame(playLoop);
+            playRAF = throttledFrame(playLoop);
         }
 
         function redraw() {
